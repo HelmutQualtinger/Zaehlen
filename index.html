@@ -501,7 +501,15 @@ function endGame() {
   playFinish();
 }
 
+function speakIntro() {
+  speak('Klicke die Tierhaufen in der richtigen Reihenfolge an. Zuerst den Haufen mit 1 Tier, dann 2, dann 3, bis 10!');
+}
+
+// Speak intro when start overlay is shown
+window.addEventListener('load', () => setTimeout(speakIntro, 500));
+
 function startGame() {
+  speechSynthesis.cancel();
   document.getElementById('start-overlay').style.display = 'none';
   audioCtx.resume();
   createPiles();
