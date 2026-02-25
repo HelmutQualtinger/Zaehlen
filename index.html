@@ -225,10 +225,34 @@
 </div>
 
 <script>
-const ANIMALS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯',
-                 '🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦆','🦉',
-                 '🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐙','🦀','🐠',
-                 '🐡','🐬','🐳','🐘','🦒','🦘','🦩','🐿️','🦔','🐊'];
+const ANIMAL_NAMES = {
+  '🐶': 'Hunde', '🐱': 'Katzen', '🐭': 'Mäuse', '🐹': 'Hamster', '🐰': 'Hasen',
+  '🦊': 'Füchse', '🐻': 'Bären', '🐼': 'Pandas', '🐨': 'Koalas', '🐯': 'Tiger',
+  '🦁': 'Löwen', '🐮': 'Kühe', '🐷': 'Schweine', '🐸': 'Frösche', '🐵': 'Affen',
+  '🐔': 'Hühner', '🐧': 'Pinguine', '🐦': 'Vögel', '🦆': 'Enten', '🦉': 'Eulen',
+  '🐴': 'Pferde', '🦄': 'Einhörner', '🐝': 'Bienen', '🐛': 'Raupen', '🦋': 'Schmetterlinge',
+  '🐌': 'Schnecken', '🐞': 'Marienkäfer', '🐙': 'Kraken', '🦀': 'Krabben', '🐠': 'Fische',
+  '🐡': 'Kugelfische', '🐬': 'Delfine', '🐳': 'Wale', '🐘': 'Elefanten', '🦒': 'Giraffen',
+  '🦘': 'Kängurus', '🦩': 'Flamingos', '🐿️': 'Eichhörnchen', '🦔': 'Igel', '🐊': 'Krokodile',
+};
+const ANIMAL_SINGULAR = {
+  '🐶': 'Hund', '🐱': 'Katze', '🐭': 'Maus', '🐹': 'Hamster', '🐰': 'Hase',
+  '🦊': 'Fuchs', '🐻': 'Bär', '🐼': 'Panda', '🐨': 'Koala', '🐯': 'Tiger',
+  '🦁': 'Löwe', '🐮': 'Kuh', '🐷': 'Schwein', '🐸': 'Frosch', '🐵': 'Affe',
+  '🐔': 'Huhn', '🐧': 'Pinguin', '🐦': 'Vogel', '🦆': 'Ente', '🦉': 'Eule',
+  '🐴': 'Pferd', '🦄': 'Einhorn', '🐝': 'Biene', '🐛': 'Raupe', '🦋': 'Schmetterling',
+  '🐌': 'Schnecke', '🐞': 'Marienkäfer', '🐙': 'Krake', '🦀': 'Krabbe', '🐠': 'Fisch',
+  '🐡': 'Kugelfisch', '🐬': 'Delfin', '🐳': 'Wal', '🐘': 'Elefant', '🦒': 'Giraffe',
+  '🦘': 'Känguru', '🦩': 'Flamingo', '🐿️': 'Eichhörnchen', '🦔': 'Igel', '🐊': 'Krokodil',
+};
+const ANIMALS = Object.keys(ANIMAL_NAMES);
+
+function speak(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'de-DE';
+  utterance.rate = 0.9;
+  speechSynthesis.speak(utterance);
+}
 
 let piles = [];
 let nextExpected = 1;
@@ -387,7 +411,7 @@ function createPiles() {
 
     placed.push({ x, y, w: pileW, h: pileH });
 
-    el.addEventListener('click', () => onPileClick(count, el));
+    el.addEventListener('click', () => onPileClick(count, el, animal));
 
     field.appendChild(el);
 
