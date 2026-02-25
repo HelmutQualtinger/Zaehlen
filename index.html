@@ -215,6 +215,7 @@
 <div id="start-overlay">
   <h2>🐾 Tier-Zählen</h2>
   <p>Klicke die Tierhaufen in der richtigen Reihenfolge an – zuerst den Haufen mit <strong>1</strong> Tier, dann <strong>2</strong>, dann <strong>3</strong> … bis <strong>10</strong>!</p>
+  <button onclick="speakIntro()">🔊 Vorlesen</button>
   <button onclick="startGame()">Los geht's!</button>
 </div>
 
@@ -504,9 +505,6 @@ function endGame() {
 function speakIntro() {
   speak('Klicke die Tierhaufen in der richtigen Reihenfolge an. Zuerst den Haufen mit 1 Tier, dann 2, dann 3, bis 10!');
 }
-
-// Speak intro when start overlay is shown
-window.addEventListener('load', () => setTimeout(speakIntro, 500));
 
 function startGame() {
   speechSynthesis.cancel();
