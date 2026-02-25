@@ -250,7 +250,8 @@ const ANIMALS = Object.keys(ANIMAL_NAMES);
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'de-DE';
-  utterance.rate = 0.9;
+  utterance.rate = 1.4;
+  utterance.pitch = 1.8;
   speechSynthesis.speak(utterance);
 }
 
@@ -429,9 +430,11 @@ function createPiles() {
   }
 }
 
-function onPileClick(count, el) {
+function onPileClick(count, el, animal) {
   if (count === nextExpected) {
     playSuccess();
+    const name = count === 1 ? ANIMAL_SINGULAR[animal] : ANIMAL_NAMES[animal];
+    speak(`${count} ${name}`);
     el.classList.add('done');
     const pile = piles.find(p => p.count === count);
     if (pile) pile.done = true;
