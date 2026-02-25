@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zählen – Tierhaufen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  h1 {
+    color: #e0e0ff;
+    margin-bottom: 12px;
+    font-size: 3rem;
+    text-shadow: 0 0 20px rgba(100, 100, 255, 0.4);
+  }
+
+  #info-bar {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+    color: #c0c0e0;
+  }
+
+  #info-bar span {
+    background: rgba(255,255,255,0.08);
+    padding: 6px 16px;
+    border-radius: 12px;
+  }
+
+  #field {
+    position: relative;
+    width: 90vw;
+    height: 75vh;
+    max-width: 1200px;
+    max-height: 800px;
+    background: linear-gradient(135deg, #16213e, #0f3460);
+    border: 3px solid rgba(100, 140, 255, 0.3);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(50, 50, 150, 0.3);
+  }
+
+  .pile {
+    position: absolute;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.3s;
+    filter: brightness(1);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid transparent;
+  }
+
+  .pile:hover {
+    transform: scale(1.08);
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,200,0.3);
+  }
+
+  .pile.done {
+    filter: brightness(0.35) grayscale(0.6);
+    pointer-events: none;
+    border-color: transparent;
+  }
+
+  .pile.done::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    color: rgba(100, 255, 100, 0.7);
+  }
+
+  .pile.wrong {
+    animation: shake 0.4s ease;
+    border-color: rgba(255, 80, 80, 0.6) !important;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px) rotate(-2deg); }
+    40% { transform: translateX(8px) rotate(2deg); }
+    60% { transform: translateX(-6px) rotate(-1deg); }
+    80% { transform: translateX(6px) rotate(1deg); }
+  }
+
+  .animal {
+    position: absolute;
+    font-size: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: none;
+  }
+
+  .pile-label {
+    position: absolute;
+    bottom: -2px;
+    right: 4px;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.2);
+    pointer-events: none;
+  }
+
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 30, 0.92);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  #overlay.show {
+    display: flex;
+  }
+
+  #overlay h2 {
+    color: #90ff90;
+    font-size: 3rem;
+    text-shadow: 0 0 30px rgba(100, 255, 100, 0.5);
+  }
+
+  #overlay .time-result {
+    color: #e0e0ff;
+    font-size: 3rem;
+  }
+
+  #overlay button {
+    margin-top: 20px;
+    padding: 14px 40px;
+    font-size: 1.3rem;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4a6cf7, #6a3de8);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(100, 80, 220, 0.4);
+    transition: transform 0.15s;
+  }
+
+  #overlay button:hover {
+    transform: scale(1.06);
+  }
+
+  #start-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 30, 0.95);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  #start-overlay h2 {
+    color: #c0c0ff;
+    font-size: 2.2rem;
+  }
+
+  #start-overlay p {
+    color: #a0a0c0;
+    font-size: 1.1rem;
+    max-width: 500px;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  #start-overlay button {
+    margin-top: 16px;
+    padding: 14px 48px;
+    font-size: 1.4rem;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #4a6cf7, #6a3de8);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(100, 80, 220, 0.4);
+    transition: transform 0.15s;
+  }
+
+  #start-overlay button:hover {
+    transform: scale(1.06);
+  }
+</style>
+</head>
+<body>
+
+<h1>🔢 Zählen</h1>
+<div id="info-bar">
+  <span>Nächste: <strong id="next-num">1</strong></span>
+  <span>⏱ <strong id="timer">0.0s</strong></span>
+</div>
+<div id="field"></div>
+
+<div id="start-overlay">
+  <h2>🐾 Tier-Zählen</h2>
+  <p>Klicke die Tierhaufen in der richtigen Reihenfolge an – zuerst den Haufen mit <strong>1</strong> Tier, dann <strong>2</strong>, dann <strong>3</strong> … bis <strong>10</strong>!</p>
+  <button onclick="startGame()">Los geht's!</button>
+</div>
+
+<div id="overlay">
+  <h2>🎉 Geschafft!</h2>
+  <div class="time-result" id="result-time"></div>
+  <button onclick="resetGame()">Nochmal spielen</button>
+</div>
+
+<script>
+const ANIMALS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯',
+                 '🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦆','🦉',
+                 '🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐙','🦀','🐠',
+                 '🐡','🐬','🐳','🐘','🦒','🦘','🦩','🐿️','🦔','🐊'];
+
+let piles = [];
+let nextExpected = 1;
+let startTime = 0;
+let timerInterval = null;
+let animationFrame = null;
+
+// Audio context for warning beep
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playWarning() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = 280;
+  osc.type = 'sine';
+  gain.gain.value = 0.08;
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playSuccess() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = 600;
+  osc.type = 'sine';
+  gain.gain.value = 0.1;
+  osc.start();
+  osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.15);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+  osc.stop(audioCtx.currentTime + 0.25);
+}
+
+function playFinish() {
+  [0, 0.12, 0.24, 0.36, 0.5].forEach((delay, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 500 + i * 100;
+    osc.type = 'sine';
+    gain.gain.value = 0;
+    osc.start(audioCtx.currentTime + delay);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.2);
+    osc.stop(audioCtx.currentTime + delay + 0.2);
+  });
+}
+
+function pickAnimal() {
+  return ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+}
+
+function createPiles() {
+  const field = document.getElementById('field');
+  field.innerHTML = '';
+  piles = [];
+
+  const fieldRect = field.getBoundingClientRect();
+  const fw = fieldRect.width;
+  const fh = fieldRect.height;
+
+  // Shuffle positions for 1-10
+  const counts = [];
+  for (let i = 1; i <= 10; i++) counts.push(i);
+
+  // Place piles without overlap
+  const placed = [];
+
+  for (const count of counts) {
+    const animal = pickAnimal();
+    const el = document.createElement('div');
+    el.className = 'pile';
+    el.dataset.count = count;
+
+    // Organic circular layout: place animals in concentric rings
+    const cellSize = 56;
+    const positions = [];
+
+    if (count === 1) {
+      positions.push({ ax: 0, ay: 0 });
+    } else if (count === 2) {
+      positions.push({ ax: -24, ay: (Math.random() - 0.5) * 12 });
+      positions.push({ ax: 24, ay: (Math.random() - 0.5) * 12 });
+    } else {
+      // Place first in center
+      positions.push({ ax: 0, ay: 0 });
+      // Rest in a ring with random jitter
+      const remaining = count - 1;
+      const ringRadius = 32 + Math.min(remaining, 5) * 6;
+      for (let j = 0; j < remaining; j++) {
+        const angle = (j / remaining) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+        const r = ringRadius + (Math.random() - 0.5) * 12;
+        positions.push({
+          ax: Math.cos(angle) * r,
+          ay: Math.sin(angle) * r,
+        });
+      }
+    }
+
+    // Calculate bounding box of positions
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const p of positions) {
+      minX = Math.min(minX, p.ax - cellSize / 2);
+      maxX = Math.max(maxX, p.ax + cellSize / 2);
+      minY = Math.min(minY, p.ay - cellSize / 2);
+      maxY = Math.max(maxY, p.ay + cellSize / 2);
+    }
+    const padding = 10;
+    const pileW = maxX - minX + padding * 2;
+    const pileH = maxY - minY + padding * 2;
+    const cx = -minX + padding;
+    const cy = -minY + padding;
+
+    // Animals inside with absolute positions
+    const animalEls = [];
+    for (let j = 0; j < count; j++) {
+      const span = document.createElement('span');
+      span.className = 'animal';
+      span.textContent = animal;
+      span.style.width = cellSize + 'px';
+      span.style.height = cellSize + 'px';
+      span.style.left = (cx + positions[j].ax - cellSize / 2) + 'px';
+      span.style.top = (cy + positions[j].ay - cellSize / 2) + 'px';
+      el.appendChild(span);
+      animalEls.push({
+        el: span,
+        baseLeft: cx + positions[j].ax - cellSize / 2,
+        baseTop: cy + positions[j].ay - cellSize / 2,
+        phase: Math.random() * Math.PI * 2,
+        ampX: 1.5 + Math.random() * 2.5,
+        ampY: 1.5 + Math.random() * 2.5,
+        speedX: 0.8 + Math.random() * 1.5,
+        speedY: 0.8 + Math.random() * 1.5,
+      });
+    }
+
+    el.style.width = pileW + 'px';
+    el.style.height = pileH + 'px';
+
+    // Find non-overlapping position
+    let x, y, attempts = 0;
+    const margin = 10;
+    do {
+      x = margin + Math.random() * (fw - pileW - margin * 2);
+      y = margin + Math.random() * (fh - pileH - margin * 2);
+      attempts++;
+    } while (attempts < 200 && placed.some(p =>
+      x < p.x + p.w + 8 && x + pileW + 8 > p.x &&
+      y < p.y + p.h + 8 && y + pileH + 8 > p.y
+    ));
+
+    placed.push({ x, y, w: pileW, h: pileH });
+
+    el.addEventListener('click', () => onPileClick(count, el));
+
+    field.appendChild(el);
+
+    piles.push({
+      el,
+      count,
+      x, y,
+      w: pileW,
+      h: pileH,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      animals: animalEls,
+      done: false,
+    });
+  }
+}
+
+function onPileClick(count, el) {
+  if (count === nextExpected) {
+    playSuccess();
+    el.classList.add('done');
+    const pile = piles.find(p => p.count === count);
+    if (pile) pile.done = true;
+    nextExpected++;
+    document.getElementById('next-num').textContent = nextExpected > 10 ? '✓' : nextExpected;
+
+    if (nextExpected > 10) {
+      endGame();
+    }
+  } else {
+    playWarning();
+    el.classList.add('wrong');
+    setTimeout(() => el.classList.remove('wrong'), 450);
+  }
+}
+
+function animate(time) {
+  const field = document.getElementById('field');
+  const fw = field.clientWidth;
+  const fh = field.clientHeight;
+  const t = time / 1000;
+
+  for (const pile of piles) {
+    if (pile.done) continue;
+
+    // Move pile
+    pile.x += pile.vx;
+    pile.y += pile.vy;
+
+    // Bounce off walls
+    if (pile.x <= 0) { pile.x = 0; pile.vx = Math.abs(pile.vx); }
+    if (pile.y <= 0) { pile.y = 0; pile.vy = Math.abs(pile.vy); }
+    if (pile.x + pile.w >= fw) { pile.x = fw - pile.w; pile.vx = -Math.abs(pile.vx); }
+    if (pile.y + pile.h >= fh) { pile.y = fh - pile.h; pile.vy = -Math.abs(pile.vy); }
+
+    pile.el.style.left = pile.x + 'px';
+    pile.el.style.top = pile.y + 'px';
+
+    // Animate individual animals
+    for (const a of pile.animals) {
+      const dx = Math.sin(t * a.speedX + a.phase) * a.ampX;
+      const dy = Math.cos(t * a.speedY + a.phase) * a.ampY;
+      a.el.style.left = (a.baseLeft + dx) + 'px';
+      a.el.style.top = (a.baseTop + dy) + 'px';
+    }
+  }
+
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    document.getElementById('timer').textContent = elapsed.toFixed(1) + 's';
+  }, 100);
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  document.getElementById('result-time').textContent = `Deine Zeit: ${elapsed} Sekunden`;
+  document.getElementById('overlay').classList.add('show');
+  playFinish();
+}
+
+function startGame() {
+  document.getElementById('start-overlay').style.display = 'none';
+  audioCtx.resume();
+  createPiles();
+  startTimer();
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function resetGame() {
+  document.getElementById('overlay').classList.remove('show');
+  nextExpected = 1;
+  document.getElementById('next-num').textContent = '1';
+  document.getElementById('timer').textContent = '0.0s';
+  cancelAnimationFrame(animationFrame);
+  clearInterval(timerInterval);
+  createPiles();
+  startTimer();
+  animationFrame = requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
