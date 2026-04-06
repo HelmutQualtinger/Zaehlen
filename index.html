@@ -251,7 +251,7 @@ const ANIMALS = Object.keys(ANIMAL_NAMES);
 function speak(text) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'de-DE';
-  utterance.rate = 1.4;
+  utterance.rate = 0.9;
   utterance.pitch = 1.8;
   speechSynthesis.speak(utterance);
 }
@@ -276,6 +276,20 @@ function playWarning() {
   osc.start();
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
   osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playLosing() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.5);
+  osc.type = 'sine';
+  gain.gain.value = 0.12;
+  osc.start();
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  osc.stop(audioCtx.currentTime + 0.5);
 }
 
 function playSuccess() {
@@ -423,8 +437,8 @@ function createPiles() {
       x, y,
       w: pileW,
       h: pileH,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
+      vx: (Math.random() - 0.5) * 2.0,
+      vy: (Math.random() - 0.5) * 2.0,
       animals: animalEls,
       done: false,
     });
@@ -446,7 +460,9 @@ function onPileClick(count, el, animal) {
       endGame();
     }
   } else {
-    playWarning();
+    playLosing();
+    speak('10 Strafsekunden');
+    startTime -= 10000;
     el.classList.add('wrong');
     setTimeout(() => el.classList.remove('wrong'), 450);
   }
