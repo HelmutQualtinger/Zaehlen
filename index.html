@@ -82,15 +82,15 @@
   .pile {
     position: absolute;
     cursor: pointer;
-    transition: transform 0.15s, filter 0.3s;
+    transition: filter 0.3s;
     filter: brightness(1);
     border-radius: 50%;
     background: rgba(255,255,255,0.04);
     border: 2px solid transparent;
+    will-change: transform;
   }
 
   .pile:hover {
-    transform: scale(1.08);
     background: rgba(255,255,255,0.1);
     border-color: rgba(255,255,200,0.3);
   }
@@ -131,6 +131,7 @@
     align-items: center;
     justify-content: center;
     transition: none;
+    will-change: transform;
   }
 
   .pile-label {
@@ -287,6 +288,8 @@ let nextExpected = 1;
 let startTime = 0;
 let timerInterval = null;
 let animationFrame = null;
+let fieldWidth = 0;
+let fieldHeight = 0;
 
 // Audio context for warning beep
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -358,8 +361,10 @@ function createPiles() {
   piles = [];
 
   const fieldRect = field.getBoundingClientRect();
-  const fw = fieldRect.width;
-  const fh = fieldRect.height;
+  fieldWidth = fieldRect.width;
+  fieldHeight = fieldRect.height;
+  const fw = fieldWidth;
+  const fh = fieldHeight;
 
   // Shuffle positions for 1-10
   const counts = [];
@@ -429,15 +434,17 @@ function createPiles() {
         baseLeft: cx + positions[j].ax - cellSize / 2,
         baseTop: cy + positions[j].ay - cellSize / 2,
         phase: Math.random() * Math.PI * 2,
-        ampX: 1.5 + Math.random() * 2.5,
-        ampY: 1.5 + Math.random() * 2.5,
-        speedX: 0.8 + Math.random() * 1.5,
-        speedY: 0.8 + Math.random() * 1.5,
+        ampX: 3 + Math.random() * 4,
+        ampY: 3 + Math.random() * 4,
+        speedX: 3 + Math.random() * 4,
+        speedY: 3 + Math.random() * 4,
       });
     }
 
     el.style.width = pileW + 'px';
     el.style.height = pileH + 'px';
+    el.style.left = '0';
+    el.style.top = '0';
 
     // Find non-overlapping position
     let x, y, attempts = 0;
@@ -454,6 +461,7 @@ function createPiles() {
     placed.push({ x, y, w: pileW, h: pileH });
 
     el.addEventListener('click', () => onPileClick(count, el, animal));
+    el.style.transform = `translate(${x}px, ${y}px)`;
 
     field.appendChild(el);
 
@@ -463,8 +471,8 @@ function createPiles() {
       x, y,
       w: pileW,
       h: pileH,
-      vx: (Math.random() - 0.5) * 2.0,
-      vy: (Math.random() - 0.5) * 2.0,
+      vx: (Math.random() - 0.5) * 6.0,
+      vy: (Math.random() - 0.5) * 6.0,
       animals: animalEls,
       done: false,
     });
@@ -495,10 +503,13 @@ function onPileClick(count, el, animal) {
 }
 
 function animate(time) {
-  const field = document.getElementById('field');
-  const fw = field.clientWidth;
-  const fh = field.clientHeight;
   const t = time / 1000;
+
+  // Update timer every frame
+  if (startTime > 0) {
+    const elapsed = (Date.now() - startTime) / 1000;
+    document.getElementById('timer').textContent = elapsed.toFixed(1) + 's';
+  }
 
   for (const pile of piles) {
     if (pile.done) continue;
@@ -510,18 +521,16 @@ function animate(time) {
     // Bounce off walls
     if (pile.x <= 0) { pile.x = 0; pile.vx = Math.abs(pile.vx); }
     if (pile.y <= 0) { pile.y = 0; pile.vy = Math.abs(pile.vy); }
-    if (pile.x + pile.w >= fw) { pile.x = fw - pile.w; pile.vx = -Math.abs(pile.vx); }
-    if (pile.y + pile.h >= fh) { pile.y = fh - pile.h; pile.vy = -Math.abs(pile.vy); }
+    if (pile.x + pile.w >= fieldWidth) { pile.x = fieldWidth - pile.w; pile.vx = -Math.abs(pile.vx); }
+    if (pile.y + pile.h >= fieldHeight) { pile.y = fieldHeight - pile.h; pile.vy = -Math.abs(pile.vy); }
 
-    pile.el.style.left = pile.x + 'px';
-    pile.el.style.top = pile.y + 'px';
+    pile.el.style.transform = `translate(${pile.x}px, ${pile.y}px)`;
 
     // Animate individual animals
     for (const a of pile.animals) {
       const dx = Math.sin(t * a.speedX + a.phase) * a.ampX;
       const dy = Math.cos(t * a.speedY + a.phase) * a.ampY;
-      a.el.style.left = (a.baseLeft + dx) + 'px';
-      a.el.style.top = (a.baseTop + dy) + 'px';
+      a.el.style.transform = `translate(${dx}px, ${dy}px)`;
     }
   }
 
@@ -530,14 +539,9 @@ function animate(time) {
 
 function startTimer() {
   startTime = Date.now();
-  timerInterval = setInterval(() => {
-    const elapsed = (Date.now() - startTime) / 1000;
-    document.getElementById('timer').textContent = elapsed.toFixed(1) + 's';
-  }, 100);
 }
 
 function endGame() {
-  clearInterval(timerInterval);
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   document.getElementById('result-time').textContent = `Deine Zeit: ${elapsed} Sekunden`;
   document.getElementById('overlay').classList.add('show');
@@ -563,7 +567,6 @@ function resetGame() {
   document.getElementById('next-num').textContent = '1';
   document.getElementById('timer').textContent = '0.0s';
   cancelAnimationFrame(animationFrame);
-  clearInterval(timerInterval);
   createPiles();
   startTimer();
   animationFrame = requestAnimationFrame(animate);
